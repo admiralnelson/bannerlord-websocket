@@ -1,0 +1,23 @@
+<Module>
+     <Name value="MyVBPatchProject"/>
+     <Id value="MyVBPatchProject"/>
+     <Version value="e1.0.3"/>
+     <SingleplayerModule value="true"/>
+     <MultiplayerModule value="false"/>
+     <DependedModules>
+		<DependedModule Id="BannerLib.Input"/>
+    </DependedModules>
+     <SubModules>
+         <SubModule>
+             <Name value="MyVBPatchProject"/>
+             <DLLName value="MyVBPatchProject.dll"/>             
+             <SubModuleClassType value="MyVBPatchProject.Main"/>
+             <Tags>
+                 <Tag key="DedicatedServerType" value="none" />
+                 <Tag key="IsNoRenderModeElement" value="false" />
+             </Tags>
+         </SubModule>
+     </SubModules>
+     <Xmls>
+  </Xmls>
+ </Module>
