@@ -20,9 +20,11 @@ Namespace Global.VBWebsocketServer
             mIp = ip
             mPort = port
             mWebsocketListener = New HttpListener()
-            mWebsocketListener.Prefixes.Add($"http://{mIp}:{mPort}/ws")
+            mWebsocketListener.Prefixes.Add($"http://{mIp}:{mPort}/ws/")
+            mWebsocketListener.Start()
             Print($"websocket is started at {port}:{ip}")
             mThread = New Thread(AddressOf ServerLoop)
+            mThread.IsBackground = True
             mThread.Start()
         End Sub
 
@@ -34,6 +36,7 @@ Namespace Global.VBWebsocketServer
                         If (httpContext.Request.IsWebSocketRequest) Then
                             ProcessLoop(httpContext)
                         Else
+                            Print($"request from {httpContext.Request.RemoteEndPoint} is not a websocket")
                             httpContext.Response.StatusCode = 400
                             httpContext.Response.Close()
                         End If
@@ -89,6 +92,11 @@ Namespace Global.VBWebsocketServer
             End Try
 
         End Sub
+
+        Public Sub ShutDown()
+            mThread.Abort()
+        End Sub
+
 
     End Class
 

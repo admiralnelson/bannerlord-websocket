@@ -101,6 +101,7 @@ Namespace Global.VBWebsocketServer
                 Print($"web server is online: {mPrefix}")
                 Print($"home path is: {mRootPath}")
                 mThread = New Thread(AddressOf ServerLoop)
+                mThread.IsBackground = True
                 mThread.Start()
             Catch ex As Exception
                 MessageBox("failed", "failed to start the webserver!")
@@ -147,6 +148,9 @@ Namespace Global.VBWebsocketServer
             mThread.Resume()
         End Sub
 
+        Public Sub ShutDown()
+            mThread.Abort()
+        End Sub
 
 
 
