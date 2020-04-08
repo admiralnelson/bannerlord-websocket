@@ -272,6 +272,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main.vb" />
+    <Compile Include="Utils.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -287,6 +288,8 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="Webserver.vb" />
+    <Compile Include="Websocket.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">
@@ -308,9 +311,12 @@
     </None>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="SubModule.xml" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
   <PropertyGroup>
-    <PreBuildEvent>xcopy /F /R /Y /I  "$(SolutionDir)VBWebsocketServer" "F:\Steam\steamapps\common\Mount &amp; Blade II Bannerlord\Modules\VBWebsocketServer"
+    <PreBuildEvent>xcopy /F /R /Y /I  /E "$(SolutionDir)VBWebsocketServer" "F:\Steam\steamapps\common\Mount &amp; Blade II Bannerlord\Modules\VBWebsocketServer"
 </PreBuildEvent>
   </PropertyGroup>
 </Project>

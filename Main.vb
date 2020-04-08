@@ -1,14 +1,18 @@
-﻿Imports HarmonyLib
+﻿Imports System.IO
+Imports System.Reflection
 Imports TaleWorlds.CampaignSystem
 Imports TaleWorlds.Core
 Imports TaleWorlds.MountAndBlade
 
-Namespace Global.MyVBPatchProject
+Namespace Global.VBWebsocketServer
     Public Class Main
         Inherits MBSubModuleBase
-
+        Dim webServer As Webserver
+        Dim webSocket As Websocket
         Protected Overrides Sub OnSubModuleLoad()
             MyBase.OnSubModuleLoad()
+            webServer = New Webserver()
+            webSocket = New Websocket()
         End Sub
 
         Protected Overrides Sub OnGameStart(game As Game, gameStarterObject As IGameStarter)
@@ -33,6 +37,8 @@ Namespace Global.MyVBPatchProject
 
         Protected Overrides Sub OnBeforeInitialModuleScreenSetAsRoot()
             MyBase.OnBeforeInitialModuleScreenSetAsRoot()
+            Dim location = GetMyLocation()
+            MessageBox("my dll is located at", location)
         End Sub
 
     End Class
