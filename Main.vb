@@ -24,6 +24,12 @@ Namespace Global.VBWebsocketServer
 
             Dim campaignStarter = CType(gameStarterObject, CampaignGameStarter)
             AddBehaviour(campaignStarter)
+            webSocket.Start()
+        End Sub
+
+        Public Overrides Sub OnGameEnd(game As Game)
+            MyBase.OnGameEnd(game)
+            webSocket.Stop()
         End Sub
 
         Private Sub AddBehaviour(gameInit As CampaignGameStarter)

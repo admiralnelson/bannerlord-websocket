@@ -1,102 +1,84 @@
-﻿Imports System.Net
-Imports System.Net.Sockets
-Imports System.Net.WebSockets
+﻿Imports System.Dynamic
+Imports System.Net
 Imports System.Threading
+Imports TaleWorlds.CampaignSystem
+Imports WebSocketSharp
+Imports WebSocketSharp.Server
+Imports Newtonsoft.Json
+
 
 Namespace Global.VBWebsocketServer
 
-
-
     Public Class Websocket
-        Dim mIp = "127.0.0.1"
-        Dim mPort = 9001
-        Dim mConnectedClient = 0
-        Dim mWebsocketListener As HttpListener
-        Dim mListening = True
+        Dim mServer As WebSocketServer
         Dim mThread As Thread
+        Friend Class MyHub
+            Inherits WebSocketBehavior
+            Dim connected = False
+            Protected Overrides Sub OnClose(e As CloseEventArgs)
+                connected = False
+                MyBase.OnClose(e)
+            End Sub
 
+            Protected Overrides Sub OnError(e As ErrorEventArgs)
+                MyBase.OnError(e)
+            End Sub
 
-        Public Sub New(Optional ip As String = "localhost", Optional port As Integer = 9001)
-            mIp = ip
-            mPort = port
-            mWebsocketListener = New HttpListener()
-            mWebsocketListener.Prefixes.Add($"http://{mIp}:{mPort}/ws/")
-            mWebsocketListener.Start()
-            Print($"websocket is started at {port}:{ip}")
-            mThread = New Thread(AddressOf ServerLoop)
-            mThread.IsBackground = True
-            mThread.Start()
-        End Sub
+            Protected Overrides Sub OnMessage(e As MessageEventArgs)
+                MyBase.OnMessage(e)
+                Dim clientIPAddress = Context.UserEndPoint.Address
+                Print($"got msg from {clientIPAddress} : {e.Data}")
+                Send($"reply {e.Data}")
+            End Sub
 
-        Private Sub ServerLoop()
-            While (True)
-                'mThreadEvent.WaitOne()
-                ThreadPool.QueueUserWorkItem(
-                    Sub(httpContext As HttpListenerContext)
-                        If (httpContext.Request.IsWebSocketRequest) Then
-                            ProcessLoop(httpContext)
-                        Else
-                            Print($"request from {httpContext.Request.RemoteEndPoint} is not a websocket")
-                            httpContext.Response.StatusCode = 400
-                            httpContext.Response.Close()
-                        End If
-                    End Sub, mWebsocketListener.GetContext())
-            End While
-        End Sub
+            Protected Overrides Sub OnOpen()
+                MyBase.OnOpen()
+                connected = True
+                Dim clientIPAddress = Context.UserEndPoint.Address
+                Print($"connected {clientIPAddress}")
+                While connected
+                    Try
+                        For Each party In Campaign.Current.Parties
 
-        Private Async Sub ProcessLoop(httpContext As HttpListenerContext)
-            Dim webSocketContext As WebSocketContext
-            Try
-                webSocketContext = Await httpContext.AcceptWebSocketAsync(subProtocol:=Nothing)
-                Interlocked.Increment(mConnectedClient)
-                Print($"processed {mConnectedClient}")
-            Catch ex As Exception
-                httpContext.Response.StatusCode = 500
-                httpContext.Response.Close()
-                Print($"websocket exception! {ex}")
-                Exit Sub
-            End Try
-
-            Dim webSocketServer = webSocketContext.WebSocket
-
-            Try
-                Dim buffer(2048) As Byte
-                While (webSocketServer.State = WebSocketState.Open)
-                    Dim receivedResult = Await webSocketServer.ReceiveAsync(
-                        New ArraySegment(Of Byte)(buffer),
-                        CancellationToken.None)
-
-                    If (receivedResult.MessageType = WebSocketMessageType.Close) Then
-                        Await webSocketServer.CloseAsync(WebSocketCloseStatus.NormalClosure,
-                                                         "",
-                                                         CancellationToken.None)
-                    ElseIf (receivedResult.MessageType = WebSocketMessageType.Text) Then
-                        Dim receivedMsg = Text.Encoding.UTF8.GetString(buffer, 0,
-                                                                       receivedResult.Count)
-                        receivedMsg = $"bannerlord reply: {receivedMsg}"
-                        Print($"client sends:{receivedMsg}")
-                        Dim sendBuffer = Text.Encoding.UTF8.GetBytes(receivedMsg)
-                        Await webSocketServer.SendAsync(New ArraySegment(Of Byte)(sendBuffer),
-                                                        WebSocketMessageType.Text,
-                                                        receivedResult.EndOfMessage,
-                                                        CancellationToken.None)
-                    End If
+                            If (party.IsMobile) Then
+                                Dim obj As Object = New ExpandoObject()
+                                obj.position = party.Position2D
+                                obj.name = party.Name
+                                If (party.Owner IsNot Nothing) Then
+                                    obj.hero = party.Owner.Name
+                                End If
+                                obj.hero = party.Id
+                                Dim data = JsonConvert.SerializeObject(obj)
+                                Send(data)
+                            End If
+                        Next
+                    Catch ex As Exception
+                        Print($"an exception while sending data: {ex.Message}")
+                    End Try
                 End While
+            End Sub
+        End Class
 
-            Catch ex As Exception
-                Print($"websocket exception {ex}")
-            Finally
-                If (webSocketServer IsNot Nothing) Then
-                    webSocketServer.Dispose()
-                End If
-            End Try
+        Public Sub New(Optional ip As String = "localhost",
+                       Optional port As Integer = 9001)
+            Dim url = $"ws://{ip}:{port}"
+            mServer = New WebSocketServer(port)
+            mServer.AddWebSocketService(Of MyHub)("/main")
+            Debug.Print(mServer.IsListening)
+            For Each x In mServer.WebSocketServices.Paths
+                Debug.WriteLine(x)
+            Next
 
         End Sub
-
-        Public Sub ShutDown()
-            mThread.Abort()
+        Public Sub Start()
+            mServer.Start()
+            Debug.WriteLine("Listening on port {0}, and providing WebSocket services:", mServer.Port)
         End Sub
 
+        Public Sub [Stop]()
+            mServer.Stop()
+            Debug.WriteLine("Stopping services...")
+        End Sub
 
     End Class
 
